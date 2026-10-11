@@ -15,7 +15,7 @@ func _initialize() -> void:
 	get_root().add_child(board)
 	call_deferred("_verify", board)
 
-func _verify(board: Node2D) -> void:
+func _verify(board: BoardScript) -> void:
 	assert(board.get_connected_group_count() == 9)
 	for id in range(2, 9):
 		board.get_piece_node(id).position = Vector2(10000 + id * 1000, 10000)

@@ -3,6 +3,9 @@ extends SceneTree
 const BoardScript = preload("res://addons/jigsawg/src/jigsaw_board.gd")
 
 func _initialize() -> void:
+	call_deferred("_run")
+
+func _run() -> void:
 	var host: Node2D = Node2D.new()
 	get_root().add_child(host)
 	var camera: Camera2D = Camera2D.new()

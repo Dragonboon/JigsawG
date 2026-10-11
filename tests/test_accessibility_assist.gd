@@ -12,6 +12,7 @@ func _config(mosaic: bool, extra_snap: float, pointer_radius: float) -> JigsawPu
 	cfg.columns = 3
 	cfg.rows = 3
 	cfg.gameplay.initial_scatter = false
+	cfg.camera.auto_fit_camera = false
 	cfg.gameplay.game_mode = JigsawGameplaySettings.Mode.MOSAIC if mosaic else JigsawGameplaySettings.Mode.FREE
 	cfg.gameplay.allow_piece_rotation = true
 	cfg.gameplay.snap_assist_extra_fraction = extra_snap

@@ -59,6 +59,9 @@ An empty Event Mask means **every event**, so for normal effects select at least
 
 Reactions execute in array order. You can stack several reactions on the same event—for example sound + particles + floating score text on a successful group connection.
 
+The Board snapshots the reaction list before dispatch. If a callback replaces or detaches the Board, the superseded event stops before subsequent signals/reactions; the replacement configuration never receives the old event. For gameplay callbacks, schedule scene/configuration transitions with `call_deferred()` so the current interaction can finish. Use `queue_free()` rather than freeing the Board inside its own signal callback.
+
+
 ### Recipe: sound when pieces/groups connect
 
 Create a **JigsawAudioReaction**:

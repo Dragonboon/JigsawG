@@ -24,7 +24,7 @@ func _initialize() -> void:
 	host.add_child(board)
 	call_deferred("_verify", board, host)
 
-func _verify(board: Node2D, host: Node2D) -> void:
+func _verify(board: BoardScript, host: Node2D) -> void:
 	var piece := board.get_piece_node(0) as JigsawPiece
 	var original_position := piece.position
 	var before := piece.transform

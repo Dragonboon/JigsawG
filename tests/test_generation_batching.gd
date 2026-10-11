@@ -18,6 +18,9 @@ func _config(columns: int, rows: int, batch_size: int) -> JigsawPuzzleConfig:
 
 
 func _initialize() -> void:
+	call_deferred("_run")
+
+func _run() -> void:
 	var board: BoardScript = BoardScript.new()
 	board.puzzle_config = _config(6, 6, 7)
 	board.generation_progress_changed.connect(func(done: int, total: int) -> void:

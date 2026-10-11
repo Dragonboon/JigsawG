@@ -18,6 +18,12 @@ The runner rejects non-zero exits, script/import errors and missing PASS markers
 - [ ] Copy only `addons/jigsawg` to a fresh Godot project; after Godot imports the addon, the icon UID must resolve without any root `res://icon.svg`.
 - [ ] Run `godot --headless --path . --script res://tests/test_plugin_icon.gd` and confirm the UID resolves to a valid Texture2D.
 
+## Host lifecycle regression
+
+Run `tests/test_generation_lifecycle.gd` for generation-callback replacement, reaction isolation, failed/retried generation, guarded saves, staged configuration and detach/reattach cancellation. Existing batching, public integration, state and event tests remain complementary.
+
+Manually verify a host loading/error HUD and Save button with batch size 0 and a positive batch size. Visual/device validation is separate from these headless checks.
+
 ## Configuration
 - [ ] Install only `addons/jigsawg` in a clean Godot project; JigsawBoard appears in Add Node.
 - [ ] JigsawBoard Inspector exposes only `Puzzle Config` (no duplicated exported settings).

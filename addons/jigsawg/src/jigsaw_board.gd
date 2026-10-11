@@ -2,10 +2,14 @@
 extends Node2D
 ## Public puzzle component. Persistent behavior comes from JigsawPuzzleConfig;
 ## host games integrate through signals, JigsawPuzzleEvent and JigsawReaction.
+## Connect lifecycle signals before configure(); zero-batch generation is synchronous.
+## Check is_puzzle_ready() before saving; a failed or cancelled build has no snapshot.
 ## Compact compatibility signals. Prefer the rich semantic API below for new integrations.
 signal puzzle_generated(piece_count: int)
 ## Incremental generation progress, emitted after each configured piece batch.
 signal generation_progress_changed(generated: int, total: int)
+## Generation was rejected. The host owns error UI and may configure another puzzle.
+signal generation_failed(reason: String)
 ## Warning emitted if native source detail per puzzle piece is low.
 signal artwork_detail_warning(info: Dictionary)
 signal pieces_connected(group_size: int)
@@ -240,6 +244,8 @@ var _generation_batch_size := 0
 var _generation_serial := 0
 var _generating := false
 var _generation_total := 0
+var _generation_error := ""
+var _applied_config: JigsawPuzzleConfig
 
 ## Runtime-only input state; never part of JigsawPuzzleState.
 var _device_input: JigsawDeviceInputSettings
@@ -262,6 +268,13 @@ func _ready() -> void:
 		return
 	rebuild()
 
+func _exit_tree() -> void:
+	_generation_serial += 1
+	if _generating:
+		_generating = false
+		_generation_total = 0
+		request_ready() # An interrupted batch restarts if this Node is reattached.
+
 ## Assign a reusable config from code, optionally rebuilding immediately.
 ## This method never mutates the supplied Resource.
 func configure(config: JigsawPuzzleConfig, regenerate: bool = true) -> void:
@@ -281,6 +294,17 @@ func get_configuration() -> JigsawPuzzleConfig:
 ## True while a batch-based generation job is still building piece nodes.
 func is_generating() -> bool:
 	return _generating
+
+
+## True only for a complete, attached board; puzzle completion is is_completed().
+func is_puzzle_ready() -> bool:
+	return is_inside_tree() and not is_queued_for_deletion() and not _generating and _generation_total > 0 \
+		and _pieces.size() == _generation_total
+
+
+## Empty before a build or after success/cancellation; otherwise the last failure.
+func get_generation_error() -> String:
+	return _generation_error
 
 
 ## Counts of generated and planned pieces for loading UI.
@@ -529,22 +553,25 @@ func get_progress_info() -> Dictionary:
 func _emit_progress_changed() -> void:
 	progress_changed.emit(get_progress())
 
-## Capture current positions, rotations, group graph and Mosaic locks into a new Resource.
-## Persist it with ResourceSaver yourself, or assign it to JigsawPuzzleConfig.resume_state.
 ## Create a standalone config snapshot suitable for ResourceSaver.
 ## The returned Resource is detached from the board's original config.
 func capture_resume_config() -> JigsawPuzzleConfig:
+	var state: JigsawPuzzleState = capture_state()
+	if state == null:
+		return null
 	var config: JigsawPuzzleConfig
-	if puzzle_config != null:
-		config = puzzle_config.duplicate(true) as JigsawPuzzleConfig
+	if _applied_config != null:
+		config = _applied_config.duplicate(true) as JigsawPuzzleConfig
 	else:
 		config = JigsawPuzzleConfig.new()
-	config.resume_state = capture_state()
+	config.resume_state = state
 	return config
 
+## Capture a detached gameplay snapshot, or null before successful generation.
+## Persist with ResourceSaver or assign to JigsawPuzzleConfig.resume_state.
 func capture_state() -> JigsawPuzzleState:
-	if _generating:
-		push_warning("JigsawG: capture_state() requires a completed puzzle; await puzzle_generated.")
+	if not is_puzzle_ready():
+		push_warning("JigsawG: capture_state() requires a ready puzzle; check is_puzzle_ready().")
 		return null
 	var state := JigsawPuzzleState.new()
 	state.columns = columns
@@ -1368,21 +1395,33 @@ func _group_bounds_local(root: int) -> Rect2:
 
 
 func rebuild() -> void:
-	_history_reset()
+	if not is_inside_tree() or Engine.is_editor_hint():
+		return
 	# Cancel a prior coroutine on its next frame before changing the scene graph.
 	_generation_serial += 1
 	var build_id := _generation_serial
-	_generating = false
+	_generating = true
 	_generation_total = 0
+	_generation_error = ""
+	_history_reset()
+	if not _is_current_build(build_id):
+		return
 	if not _pieces.is_empty():
 		if _dragged_piece >= 0:
 			_cancel_drag(JigsawPuzzleEvent.REASON_REBUILD)
+			if not _is_current_build(build_id):
+				return
 		_dispatch_event(_make_event(JigsawPuzzleEvent.Type.PUZZLE_RESET, -1, true, JigsawPuzzleEvent.REASON_REBUILD, {
 			"piece_count": _pieces.size()
 		}))
+	if not _is_current_build(build_id):
+		return
 	clear_hint()
+	if not _is_current_build(build_id):
+		return
 	_hint_previous_piece_id = -1
 	_apply_resource_presets()
+	var build_config: JigsawPuzzleConfig = _applied_config
 	_end_device_pointer()
 	_touch_positions.clear()
 	_touch_primary = -1
@@ -1412,26 +1451,28 @@ func rebuild() -> void:
 	_finished = false
 	_restored_from_state = false
 	_ghost_visibility_override = -1
+	if is_instance_valid(_preview_overlay):
+		_preview_overlay.set_preview_visible(false)
 	var source: Image
 	if puzzle_texture != null:
 		source = puzzle_texture.get_image()
 	else:
 		source = _make_demo_image()
 	if source == null or source.is_empty():
-		push_error("JigsawG: a readable source image is required.")
+		_fail_generation("A readable source image is required.")
 		return
-	if puzzle_config != null and puzzle_config.grid_mode == JigsawPuzzleConfig.GridMode.AUTO:
-		var effective_grid := GridResolver.resolve(puzzle_config.target_piece_count, source.get_size())
+	if build_config != null and build_config.grid_mode == JigsawPuzzleConfig.GridMode.AUTO:
+		var effective_grid := GridResolver.resolve(build_config.target_piece_count, source.get_size())
 		if effective_grid == Vector2i.ZERO:
-			push_error("JigsawG: no valid grid for the requested piece count and source image.")
+			_fail_generation("No valid grid for the requested piece count and source image.")
 			return
 		columns = effective_grid.x
 		rows = effective_grid.y
 	if columns < 2 or rows < 2 or silhouette_variants < 1 or silhouette_variants > 8:
-		push_error("JigsawG: invalid grid dimensions or silhouette variant count.")
+		_fail_generation("Invalid grid dimensions or silhouette variant count.")
 		return
 	if minf(float(source.get_width()) / float(columns), float(source.get_height()) / float(rows)) < 14.0:
-		push_warning("JigsawG: image is too small for the selected grid. Use fewer pieces or a larger image.")
+		_fail_generation("Image is too small for the selected grid. Use fewer pieces or a larger image.")
 		return
 	source.convert(Image.FORMAT_RGBA8)
 	_source_size = source.get_size()
@@ -1447,6 +1488,8 @@ func rebuild() -> void:
 			size.x, size.y
 		])
 		artwork_detail_warning.emit(info)
+		if not _is_current_build(build_id):
+			return
 	var shared_texture := ImageTexture.create_from_image(source)
 	_piece_size = Vector2(source.get_size()) / Vector2(columns, rows)
 	_initialize_trays()
@@ -1480,6 +1523,8 @@ func rebuild() -> void:
 	_generation_total = columns * rows
 	_generating = true
 	generation_progress_changed.emit(0, _generation_total)
+	if not _is_current_build(build_id):
+		return
 	if _generation_batch_size > 0:
 		# process_frame is emitted BEFORE drawing the next frame. Two
 		# yields guarantee at least one real frame with only the complete
@@ -1487,7 +1532,7 @@ func rebuild() -> void:
 		# generation token after each yield to support immediate cancellation.
 		for _frame_index in range(2):
 			await get_tree().process_frame
-			if build_id != _generation_serial or not is_inside_tree():
+			if not _is_current_build(build_id):
 				return
 	var horizontal: Dictionary = {}
 	var vertical: Dictionary = {}
@@ -1544,8 +1589,10 @@ func rebuild() -> void:
 			_rotations.append(0)
 			if _generation_batch_size > 0 and _pieces.size() % _generation_batch_size == 0 and _pieces.size() < _generation_total:
 				generation_progress_changed.emit(_pieces.size(), _generation_total)
+				if not _is_current_build(build_id):
+					return
 				await get_tree().process_frame
-				if build_id != _generation_serial or not is_inside_tree():
+				if not _is_current_build(build_id):
 					return
 	if initial_scatter:
 		_scatter_non_overlapping()
@@ -1555,8 +1602,10 @@ func rebuild() -> void:
 				_set_piece_quarters(i, _rng.randi_range(0, 3))
 				_pieces[i].position = center_before - (_piece_size * 0.5).rotated(_pieces[i].rotation)
 
-	if puzzle_config != null and puzzle_config.resume_state != null:
-		_restored_from_state = restore_state(puzzle_config.resume_state, false, false)
+	if build_config != null and build_config.resume_state != null:
+		_restored_from_state = restore_state(build_config.resume_state, false, false)
+		if not _is_current_build(build_id):
+			return
 
 	_camera = get_viewport().get_camera_2d()
 	if _camera:
@@ -1577,23 +1626,44 @@ func rebuild() -> void:
 		_camera_target_ready = false
 	_generating = false
 	generation_progress_changed.emit(_pieces.size(), _generation_total)
+	if not _is_current_build(build_id):
+		return
 	puzzle_generated.emit(_pieces.size())
+	if not _is_current_build(build_id):
+		return
 	_dispatch_event(_make_event(JigsawPuzzleEvent.Type.PUZZLE_STARTED, -1, true, JigsawPuzzleEvent.REASON_GENERATED, {
 		"piece_count": _pieces.size(),
-		"requested_piece_count": puzzle_config.target_piece_count if puzzle_config != null and puzzle_config.grid_mode == JigsawPuzzleConfig.GridMode.AUTO else _pieces.size(),
+		"requested_piece_count": build_config.target_piece_count if build_config != null and build_config.grid_mode == JigsawPuzzleConfig.GridMode.AUTO else _pieces.size(),
 		"columns": columns,
 		"rows": rows,
 		"game_mode": game_mode,
 		"rotation_enabled": allow_piece_rotation,
 		"resumed": _restored_from_state
 	}))
-	if _restored_from_state and puzzle_config != null and puzzle_config.resume_state != null:
-		puzzle_state_restored.emit(puzzle_config.resume_state)
+	if not _is_current_build(build_id):
+		return
+	if _restored_from_state and build_config != null and build_config.resume_state != null:
+		puzzle_state_restored.emit(build_config.resume_state)
+		if not _is_current_build(build_id):
+			return
 		_dispatch_event(_make_event(JigsawPuzzleEvent.Type.PUZZLE_STATE_RESTORED, -1, true, JigsawPuzzleEvent.REASON_RESUMED, {
-			"completed": puzzle_config.resume_state.completed,
-			"piece_count": puzzle_config.resume_state.get_piece_count()
+			"completed": build_config.resume_state.completed,
+			"piece_count": build_config.resume_state.get_piece_count()
 		}))
-	_emit_progress_changed()
+	if _is_current_build(build_id):
+		_emit_progress_changed()
+
+
+func _is_current_build(build_id: int) -> bool:
+	return build_id == _generation_serial and is_inside_tree() and not is_queued_for_deletion()
+
+
+func _fail_generation(reason: String) -> void:
+	_generating = false
+	_generation_error = reason
+	push_warning("JigsawG: " + reason)
+	generation_failed.emit(reason)
+
 
 ## Batched builds yield while piece nodes do not yet exist, so fitting to
 ## _pieces at this stage would only capture an incomplete corner of the grid.
@@ -2637,6 +2707,7 @@ func _apply_resource_presets() -> void:
 	var config := puzzle_config
 	if config == null:
 		config = JigsawPuzzleConfig.new()
+	_applied_config = config
 	puzzle_texture = config.puzzle_texture
 	columns = config.columns
 	rows = config.rows
@@ -2864,7 +2935,11 @@ func _make_event(
 ## Emit the umbrella signal, a semantic signal, then configured Resource reactions.
 ## This is the central extension point for host games.
 func _dispatch_event(event: JigsawPuzzleEvent) -> void:
+	var dispatch_id: int = _generation_serial
+	var reaction_snapshot: Array[JigsawReaction] = _active_reactions.duplicate()
 	event_emitted.emit(event)
+	if dispatch_id != _generation_serial:
+		return
 	match event.type:
 		JigsawPuzzleEvent.Type.PUZZLE_RESET:
 			puzzle_reset.emit(event)
@@ -2895,10 +2970,11 @@ func _dispatch_event(event: JigsawPuzzleEvent) -> void:
 		JigsawPuzzleEvent.Type.PUZZLE_STATE_RESTORED:
 			puzzle_state_applied.emit(event)
 
-	# Iterate a snapshot so a reaction may schedule/reconfigure safely without
-	# invalidating the current dispatch loop.
-	var reaction_snapshot: Array[JigsawReaction] = _active_reactions.duplicate()
+	# A synchronous host callback may replace the puzzle. Never deliver an old
+	# event to the replacement preset or run remaining reactions on its pieces.
 	for reaction in reaction_snapshot:
+		if dispatch_id != _generation_serial:
+			return
 		if reaction.accepts(event):
 			reaction.react(self, event)
 

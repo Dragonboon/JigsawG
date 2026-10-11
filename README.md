@@ -76,6 +76,8 @@ func start_puzzle(image: Texture2D) -> void:
 
 **Note:** Auto selects a visually balanced grid, so the actual piece count can differ slightly. For a precise count, use Manual rows/columns. With no image, a diagnostic checkerboard is used (not suitable for large puzzles).
 
+For loading screens and saves, connect `puzzle_generated` and `generation_failed` before `configure()`, and check `is_puzzle_ready()` before capture. See the [lifecycle integration example](docs/RESOURCE_API.md#loading-failure-and-saving); it handles both synchronous and batched generation.
+
 **Try the demo:** open this repository as a Godot project and run [`examples/puzzle_lab.tscn`](examples/puzzle_lab.tscn). The included preset is a development example; you can adjust its connector family, grid and artwork in the Inspector.
 
 ## Make it yours

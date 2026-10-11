@@ -397,7 +397,8 @@ For the simplest persistence workflow, capture one complete configuration contai
 
 ```gdscript
 var resume_config := $JigsawBoard.capture_resume_config()
-ResourceSaver.save(resume_config, "user://puzzle_resume.tres")
+if resume_config != null:
+    ResourceSaver.save(resume_config, "user://puzzle_resume.tres")
 ```
 
 Later:
@@ -484,9 +485,54 @@ $JigsawBoard.configure(config)
 
 `board.configure(config)`, `board.apply_configuration()` and `board.rebuild()` regenerate the board and reset current puzzle progress.
 
+`configure(config, false)` stages a preset without changing the current puzzle or an in-flight build. `get_configuration()` returns that staged preset; `apply_configuration()` activates it. `capture_resume_config()` uses the preset that generated the current pieces, so staging another puzzle does not mix its settings into the save.
+
 The Board reads configuration Resources but does not intentionally mutate them. Multiple boards may share the same preset.
 
 If a nested Resource is null, JigsawG creates runtime defaults for that section.
+
+### Loading, failure and saving
+
+Connect lifecycle signals **before** calling `configure()`. With batch size `0`, generation finishes synchronously; awaiting `puzzle_generated` afterwards would miss it. With batching enabled, the same signals arrive over subsequent frames.
+
+| Host concern | Contract |
+| --- | --- |
+| Loading UI | `generation_progress_changed(generated, total)` describes construction, not assembly progress. |
+| Enable Save / enter gameplay | `is_puzzle_ready()` is true only after all pieces are generated, including resume-state application. `puzzle_generated(count)` announces this point. |
+| Invalid image/grid | `generation_failed(reason)` lets the host show an error or retry. `get_generation_error()` supports late subscribers. No success signal is emitted. |
+| Capture | `capture_state()` and `capture_resume_config()` return `null` when detached, loading or after generation failure. |
+| Puzzle solved | `is_completed()` and `puzzle_completed` describe gameplay completion, independently of readiness. |
+| Replace or remove a loading Board | Replacement invalidates the old build. Detaching cancels it; reattaching restarts an interrupted build. |
+
+```gdscript
+@onready var board = $JigsawBoard
+
+func _ready() -> void:
+    board.puzzle_generated.connect(_on_generated)
+    board.generation_failed.connect(_on_generation_failed)
+    # A child may have generated before its parent's _ready().
+    if board.is_puzzle_ready():
+        _on_generated(board.get_piece_count())
+    elif not board.get_generation_error().is_empty():
+        _on_generation_failed(board.get_generation_error())
+
+func _on_generated(_count: int) -> void:
+    $HUD/SaveButton.disabled = false
+
+func _on_generation_failed(reason: String) -> void:
+    $HUD/SaveButton.disabled = true
+    $HUD/ErrorLabel.text = reason
+
+func save_puzzle() -> void:
+    if not board.is_puzzle_ready():
+        return
+    var snapshot: JigsawPuzzleConfig = board.capture_resume_config()
+    var error: Error = ResourceSaver.save(snapshot, "user://puzzle_resume.tres")
+    if error != OK:
+        $HUD/ErrorLabel.text = error_string(error)
+```
+
+Disable Save when starting a new load. A generation callback may configure a replacement puzzle: the superseded build stops emitting further lifecycle notifications and reactions. For gameplay-event transitions, prefer `board.configure.call_deferred(next_config)` so the current drag/snap operation can finish first. Do not `free()` the Board from a callback; use `queue_free()`.
 
 ## Integrating an existing game UI
 

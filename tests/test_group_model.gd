@@ -44,6 +44,6 @@ func _initialize() -> void:
 	assert(offset.is_equal_approx(Vector2(3, 0)))
 	assert(not Resolver.snap_offset(h0, h1, Vector2.ZERO, Vector2.ZERO, 0, 0, 5.0).is_finite())
 	assert(not Resolver.snap_offset(h0, h1, Vector2.ZERO, Vector2(100, 0), 0, 1, 5.0).is_finite())
-	assert(Resolver.snap_offset(h0, h1, Vector2.ZERO, Vector2(0, -100), 1, 1, 5.0).is_equal_approx(Vector2.ZERO))
+	assert(Resolver.snap_offset(h0, h1, Vector2.ZERO, Vector2(0, 100), 1, 1, 5.0).is_equal_approx(Vector2.ZERO))
 	print("JigsawG group model and snap resolver: PASS")
 	quit()
