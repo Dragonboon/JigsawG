@@ -27,21 +27,21 @@ A resource-driven **2D puzzle runtime** for [Godot 4.7](https://godotengine.org/
 
 ## Features
 
-| | Capability | Details |
-| :---: | --- | --- |
-| 🧩 | **Six connector families** | Classic, Rounded, Angular, Compact, Mixed and asymmetric **Organic**; complementary Bézier edges |
-| 🖱️ | **Intuitive grouping** | Single-piece drag, Ctrl-highlighted multi-selection, compact group arrangement and exact snapping |
-| 🧮 | **Choose difficulty by count** | Manual rows × columns, or an **Auto** grid near a requested 4–4000 pieces |
-| 🔎 | **Corner and border finder** | Topology-based category browsing, cycling connected groups without moving or selecting pieces |
-| 🗂️ | **Optional holding trays** | Named visible areas with group-safe drag/drop, deterministic packing and save-state support |
-| 💡 | **Progressive hints** | Opt-in three-stage clues: coarse image region, movable candidate group, then exact cell only when requested |
-| ↶ | **Bounded undo/redo** | Optional per-action timeline for moves, rotations, joins and tray operations; no save-format changes |
-| 🧭 | **Large-puzzle navigation** | Smooth zoom, panning, edge-scroll, spatial picking, **Home** for the board, **End** for overview, **F** for selection |
-| 🪄 | **Customizable presentation** | Selection outlines, colored piece contours, style presets, materials and interchangeable motion adapters |
-| 💾 | **Resumable state** | Save/restore positions, rotations, groups and Mosaic locks in Godot Resources |
-| 🔊 | **Event-driven integration** | Typed events, audio, VFX, `AnimationPlayer` and method-call reactions |
-| ⚙️ | **Scalable generation options** | Seeded layouts, spatial-hash Chaotic shuffle and optional cancellable frame batches |
-| ♿ | **Optional precision assistance** | Screen-pixel selection margin and adjustable Free/Mosaic snap radius, without changing connector geometry |
+|     | Capability                        | Details                                                                                                               |
+| :-: | --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| 🧩  | **Six connector families**        | Classic, Rounded, Angular, Compact, Mixed and asymmetric **Organic**; complementary Bézier edges                      |
+| 🖱️  | **Intuitive grouping**            | Single-piece drag, Ctrl-highlighted multi-selection, compact group arrangement and exact snapping                     |
+| 🧮  | **Choose difficulty by count**    | Manual rows × columns, or an **Auto** grid near a requested 4–4000 pieces                                             |
+| 🔎  | **Corner and border finder**      | Topology-based category browsing, cycling connected groups without moving or selecting pieces                         |
+| 🗂️  | **Optional holding trays**        | Named visible areas with group-safe drag/drop, deterministic packing and save-state support                           |
+| 💡  | **Progressive hints**             | Opt-in three-stage clues: coarse image region, movable candidate group, then exact cell only when requested           |
+|  ↶  | **Bounded undo/redo**             | Optional per-action timeline for moves, rotations, joins and tray operations; no save-format changes                  |
+| 🧭  | **Large-puzzle navigation**       | Smooth zoom, panning, edge-scroll, spatial picking, **Home** for the board, **End** for overview, **F** for selection |
+| 🪄  | **Customizable presentation**     | Selection outlines, colored piece contours, style presets, materials and interchangeable motion adapters              |
+| 💾  | **Resumable state**               | Save/restore positions, rotations, groups and Mosaic locks in Godot Resources                                         |
+| 🔊  | **Event-driven integration**      | Typed events, audio, VFX, `AnimationPlayer` and method-call reactions                                                 |
+| ⚙️  | **Scalable generation options**   | Seeded layouts, spatial-hash Chaotic shuffle and optional cancellable frame batches                                   |
+| ♿  | **Optional precision assistance** | Screen-pixel selection margin and adjustable Free/Mosaic snap radius, without changing connector geometry             |
 
 Two play styles are included: **Free** (assemble independent connected groups anywhere) and **Mosaic** (place pieces at their original positions).
 
@@ -84,23 +84,23 @@ For loading screens and saves, connect `puzzle_generated` and `generation_failed
 
 The Board exposes **one Inspector entry:** `puzzle_config`. Its sections separate durable gameplay rules from presentation:
 
-| Resource | Controls |
-| --- | --- |
-| `JigsawGameplaySettings` | Free/Mosaic, rotation, snapping, multi-selection, shuffle, ghost/preview, generation batches |
-| `JigsawAppearanceSettings` | Connector family/depth, Bézier detail, artwork filtering, **piece edge color**, material and highlights |
-| `JigsawCameraSettings` | Board/overview framing, zoom, pan, smoothing, bounds and keyboard shortcuts |
-| `JigsawDeviceInputSettings` | Opt-in tablet gestures, virtual gamepad cursor and configurable controller actions |
-| `JigsawTraySettings` | Optional named holding areas for whole connected groups, visible below the assembly board |
-| `JigsawHintSettings` | Opt-in staged clues with configurable maximum detail, region granularity and shortcut |
-| `JigsawHistorySettings` | Optional in-memory, bounded undo/redo history for player actions and host-defined shortcuts |
-| `JigsawFeedbackSettings` | Pickup/snap tints, feedback timing and optional `JigsawMotionAdapter` |
+| Resource                    | Controls                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `JigsawGameplaySettings`    | Free/Mosaic, rotation, snapping, multi-selection, shuffle, ghost/preview, generation batches            |
+| `JigsawAppearanceSettings`  | Connector family/depth, Bézier detail, artwork filtering, **piece edge color**, material and highlights |
+| `JigsawCameraSettings`      | Board/overview framing, zoom, pan, smoothing, bounds and keyboard shortcuts                             |
+| `JigsawDeviceInputSettings` | Opt-in tablet gestures, virtual gamepad cursor and configurable controller actions                      |
+| `JigsawTraySettings`        | Optional named holding areas for whole connected groups, visible below the assembly board               |
+| `JigsawHintSettings`        | Opt-in staged clues with configurable maximum detail, region granularity and shortcut                   |
+| `JigsawHistorySettings`     | Optional in-memory, bounded undo/redo history for player actions and host-defined shortcuts             |
+| `JigsawFeedbackSettings`    | Pickup/snap tints, feedback timing and optional `JigsawMotionAdapter`                                   |
 
 A few recipes:
 
 - **For natural pieces:** choose **Organic**, raise `connector_variation` and use a balanced Auto grid.
 - **For dark images:** use a lighter **Piece Edge Color**, plus a moderate **Piece Edge Opacity** and width. These change rendering only, never the snap geometry.
 - **For easier interaction:** in Gameplay → Accessibility, set **Snap Assist Extra Fraction** to `0.08` and **Selection Assist Radius Px** to `8`. Exact hits still win; the snap still requires matching neighbors and orientation. Both defaults are `0` for backward compatibility.
-- **For large puzzles:** use high-resolution *original* artwork, set **Generation Batch Size** to 64–128 and keep **Camera → Initial Focus** on Auto. When batching is enabled, JigsawG first fits and displays the **whole mosaic/assembly guide** for one frame, before spawning the first piece batch; it then applies the final camera framing after scattering.
+- **For large puzzles:** use high-resolution _original_ artwork, set **Generation Batch Size** to 64–128 and keep **Camera → Initial Focus** on Auto. When batching is enabled, JigsawG first fits and displays the **whole mosaic/assembly guide** for one frame, before spawning the first piece batch; it then applies the final camera framing after scattering.
 - **For custom animations:** assign a `JigsawMotionAdapter` under Feedback; its subclasses can animate rotation and multi-group arrangement without changing logical transforms.
 
 ### Source image quality matters
@@ -117,20 +117,20 @@ Be mindful of VRAM and maximum texture sizes when choosing ultra-high-resolution
 
 ## Controls
 
-| Input | Action |
-| --- | --- |
-| **Drag** a piece | Move it or its already-connected group |
-| **Ctrl + click** | Add/remove a group from the highlighted multi-selection |
-| **Drag** a selected group | Move all selected groups; distant groups arrange compactly |
-| **Right-click** | Rotate by 90° when enabled |
-| **Mouse wheel** | Zoom at cursor |
-| **Empty-space drag / middle drag** | Pan the camera |
-| **Home / End** | Focus assembly board / show all scattered pieces |
-| **F** | Return to the last clicked piece or frame all Ctrl-selected groups |
-| **P** | Toggle the full-image reference preview |
-| **C / E / I (demo)** | Browse corners / borders / interior pieces; camera visits one connected group at a time |
-| **H (demo)** | Reveal coarse solved region → highlight a loose group → exact slot → clear hint |
-| **Ctrl+Z / Ctrl+Y or Ctrl+Shift+Z (demo)** | Undo / redo the last completed player action |
+| Input                                      | Action                                                                                  |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| **Drag** a piece                           | Move it or its already-connected group                                                  |
+| **Ctrl + click**                           | Add/remove a group from the highlighted multi-selection                                 |
+| **Drag** a selected group                  | Move all selected groups; distant groups arrange compactly                              |
+| **Right-click**                            | Rotate by 90° when enabled                                                              |
+| **Mouse wheel**                            | Zoom at cursor                                                                          |
+| **Empty-space drag / middle drag**         | Pan the camera                                                                          |
+| **Home / End**                             | Focus assembly board / show all scattered pieces                                        |
+| **F**                                      | Return to the last clicked piece or frame all Ctrl-selected groups                      |
+| **P**                                      | Toggle the full-image reference preview                                                 |
+| **C / E / I (demo)**                       | Browse corners / borders / interior pieces; camera visits one connected group at a time |
+| **H (demo)**                               | Reveal coarse solved region → highlight a loose group → exact slot → clear hint         |
+| **Ctrl+Z / Ctrl+Y or Ctrl+Shift+Z (demo)** | Undo / redo the last completed player action                                            |
 
 All relevant controls are configurable through the Gameplay and Camera Resources. A normal single click leaves no persistent highlight; Ctrl selections stay visibly outlined. The optional Gameplay → Accessibility pointer radius is measured in **screen pixels**, so assistance feels consistent when zooming.
 
@@ -226,15 +226,15 @@ config.device_input.enable_controller = true
 board.configure(config)
 ```
 
-| Device | Control | Action |
-| --- | --- | --- |
-| Controller | Left stick | Move the visible virtual cursor |
-| Controller | A / B / X / Y | Hold/release a piece / cancel / toggle group / full-image preview |
-| Controller | Left / right shoulder | Rotate a group counterclockwise / clockwise |
-| Controller | Left / right trigger | Zoom out / in |
-| Controller | Right stick | Pan the camera |
-| Tablet | One finger | Tap, drag and release a piece |
-| Tablet | Two fingers | Pan and pinch to zoom; pending piece drags are cancelled |
+| Device     | Control               | Action                                                            |
+| ---------- | --------------------- | ----------------------------------------------------------------- |
+| Controller | Left stick            | Move the visible virtual cursor                                   |
+| Controller | A / B / X / Y         | Hold/release a piece / cancel / toggle group / full-image preview |
+| Controller | Left / right shoulder | Rotate a group counterclockwise / clockwise                       |
+| Controller | Left / right trigger  | Zoom out / in                                                     |
+| Controller | Right stick           | Pan the camera                                                    |
+| Tablet     | One finger            | Tap, drag and release a piece                                     |
+| Tablet     | Two fingers           | Pan and pinch to zoom; pending piece drags are cancelled          |
 
 The built-in controller profile uses Godot/SDL mappings (device 0 by default). Disable `device_input.use_joypad_defaults` to rely exclusively on your game's InputMap actions. Cursor speed, deadzone, joypad device and camera speed are configurable. On tablets, disable **Emulate Mouse From Touch** in Godot Project Settings when enabling native touch. When an overlay or pause menu takes input, use `board.set_interaction_enabled(false)`.
 
@@ -287,15 +287,15 @@ The addon is self-contained inside `addons/jigsawg/`. `examples/`, `tests/` and 
 
 ## Documentation
 
-| Guide | When you need it |
-| --- | --- |
-| **[Resource API](docs/RESOURCE_API.md)** | Every setting, Board methods, scene integration, state and lifecycle |
-| **[Events & reactions](docs/EVENTS_AND_REACTIONS.md)** | Inspector audio/VFX recipes, animation adapters and custom event hooks |
-| **[Testing & release checklist](docs/TESTING.md)** | Regression scripts, large-puzzle benchmarks and packaging checks |
-| **[Development roadmap](docs/ROADMAP.md)** | Prioritized work on scale, accessibility, organization and release readiness |
-| **[AI agent instructions](AGENTS.md)** | Architecture invariants, working process and test matrix for coding agents |
-| **[Changelog](CHANGELOG.md)** | Version history and preview limitations |
-| **[Contributing](CONTRIBUTING.md)** · **[Security](SECURITY.md)** | Development workflow and responsible disclosure |
+| Guide                                                             | When you need it                                                             |
+| ----------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **[Resource API](docs/RESOURCE_API.md)**                          | Every setting, Board methods, scene integration, state and lifecycle         |
+| **[Events & reactions](docs/EVENTS_AND_REACTIONS.md)**            | Inspector audio/VFX recipes, animation adapters and custom event hooks       |
+| **[Testing & release checklist](docs/TESTING.md)**                | Regression scripts, large-puzzle benchmarks and packaging checks             |
+| **[Development roadmap](docs/ROADMAP.md)**                        | Prioritized work on scale, accessibility, organization and release readiness |
+| **[AI agent instructions](AGENTS.md)**                            | Architecture invariants, working process and test matrix for coding agents   |
+| **[Changelog](CHANGELOG.md)**                                     | Version history and preview limitations                                      |
+| **[Contributing](CONTRIBUTING.md)** · **[Security](SECURITY.md)** | Development workflow and responsible disclosure                              |
 
 ### Validation and limitations
 
@@ -304,7 +304,7 @@ The addon is self-contained inside `addons/jigsawg/`. `examples/`, `tests/` and 
 - Host code owns save slots, campaigns, achievements and multiplayer input routing.
 - **Example image redistribution rights have not been independently verified.** Use properly licensed artwork in published projects. See [example artwork notes](examples/images/README.md).
 
-[Report a problem](https://github.com/sempitern0/JigsawG/issues) with your Godot version, platform, reproduction steps, puzzle Resource and relevant engine logs.
+[Report a problem](https://github.com/Dragonboon/jigsawg/issues) with your Godot version, platform, reproduction steps, puzzle Resource and relevant engine logs.
 
 ---
 
