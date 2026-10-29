@@ -15,6 +15,14 @@
 5. **Compatibility matters:** preserve saved-state schema, deterministic seeds, matching shared seams, established configuration names and event-mask numeric values wherever possible.
 6. **Measured changes:** optimize after recording baselines; compare like-for-like scenarios on named hardware and renderer.
 
+## Public distribution audit
+
+The 31 fast regressions passed on Godot 4.7.2-stable during this review.
+Independent addon-only installation, generation and state restore are covered
+by a separate clean-project gate. These results do not certify graphical quality,
+physical input devices or 200/500/2000-piece performance; those release gates
+remain open. Beginner and advanced guides now separate onboarding from contracts.
+
 ## Current baseline (implemented; release validation still pending)
 
 - Godot 4.7 GDScript addon with one public `JigsawBoard.puzzle_config` entry.

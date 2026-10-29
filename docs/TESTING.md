@@ -225,3 +225,14 @@ godot --headless --path . --script res://tests/test_piece_organizer.gd
 - [ ] Validate all Markdown links after documentation consolidation and keep installation instructions within the root README.
 - [ ] Confirm example image redistribution rights and replace unlicensed third-party media before packaging.
 - [ ] Publish a test release only after the checklist has been executed.
+
+## Clean installation and downloadable package
+
+Run `python3 scripts/ci/check_addon_installation.py --godot /path/to/godot`.
+This imports only the addon without original SVG import metadata or UID cache,
+then generates a default puzzle and captures/restores its state. It guards the
+editor-registration bootstrap independently of the development project.
+
+Build the addon with `python3 scripts/package_release.py` from a clean checkout.
+The ZIP and SHA-256 sidecar are written to dist/; CI also uploads them as an
+artifact. Only addons/jigsawg is distributed.
