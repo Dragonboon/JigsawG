@@ -7,12 +7,14 @@ JigsawG is currently in preview; public API may still evolve before 1.0, but bre
 ## Unreleased (public integration improvements)
 
 ### Fixed
+- Editor registration bootstraps through explicit addon resource paths instead of depending on a pre-existing UID cache.
 - Generation callbacks can replace a puzzle without duplicate completion/start notifications or stale Resource reactions.
 - Detaching during batched generation cancels the old job; reattaching restarts it safely.
 - State/resume capture returns null until a complete board is ready; staged configurations no longer leak into current saves or in-flight resume operations.
 - Regression fixtures now enter the scene tree before checking readiness/camera state, use concrete Board types, fix clockwise rotation expectations, and keep screen-pixel hit tests independent of camera auto-fit.
 
 ### Added
+- Independent clean-project installation regression, addon-only reproducible ZIP packaging, bundled README/LICENSE, and beginner/advanced integration guides.
 - `is_puzzle_ready()`, `generation_failed(reason)` and `get_generation_error()` for host loading, retry and save UI, with a lifecycle integration example.
 - Optional shared piece CanvasItem Material/ShaderMaterial via JigsawAppearanceSettings, without subclassing JigsawPiece.
 - Public Board facade for HUD progress, interaction pause, reference/ghost controls and camera refit.

@@ -30,3 +30,12 @@ jobs:
           python3 scripts/ci/run_tests.py \
             --godot ./Godot_v4.7.2-stable_linux.x86_64 \
             --timeout 120
+
+      - name: Validate addon-only installation
+        run: python3 scripts/ci/check_addon_installation.py --godot ./Godot_v4.7.2-stable_linux.x86_64
+      - name: Build downloadable addon
+        run: python3 scripts/package_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jigsawg-addon
+          path: dist/*

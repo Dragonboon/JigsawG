@@ -13,7 +13,7 @@ One scene node · reusable Resources · procedural interlocking pieces · no add
 [![MIT License](https://img.shields.io/badge/License-MIT-25816B)](LICENSE)
 [![Preview](https://img.shields.io/badge/Release-preview-E49B42)](docs/TESTING.md)
 
-**[Quick start](#quick-start)** · **[Features](#features)** · **[Controls](#controls)** · **[Documentation](#documentation)**
+**[Beginner guide](docs/GETTING_STARTED.md)** · **[Advanced integration](docs/ADVANCED_INTEGRATION.md)** · **[Quick start](#quick-start)** · **[Features](#features)** · **[Controls](#controls)** · **[Documentation](#documentation)**
 
 </div>
 
@@ -150,7 +150,7 @@ var focused_piece_id: int = board.focus_next_piece_by_category(
 
 The catalog is derived from the original grid, so rotation and connector appearance do not change it. **Browsing only moves the camera**; it does not choose or move pieces, change connected groups, reveal the solution or affect saved progress. In Mosaic, already locked pieces are omitted unless requested with `include_locked=true`.
 
-### P3 organizer: holding trays
+### Organizer: holding trays
 
 The demo now includes three named trays below the board. Press **End** to see the entire puzzle and its trays; move a piece or connected group into a tray and release the pointer there. Groups are packed without overlap, remain selectable, and can be dragged back to the assembly area. The same release path is used by mouse, touch and virtual controller pointer.
 
@@ -171,7 +171,7 @@ The first tray is 0; query `get_tray_count()`, `get_tray_name(index)`, `get_tray
 
 The schema-1 `JigsawPuzzleState` has an optional `tray_indices` array; older saves continue to load. A save containing tray assignments must be restored with compatible enabled tray settings. Long-term gestures/visual comfort still require real tablet and Steam Deck checks.
 
-### P3.3 — progressive hints, not auto-solving
+### Progressive hints
 
 The demo enables the **H** key to cycle through three explicitly requested help levels. First JigsawG marks a **coarse area on the assembly image**; press again to also outline the **movable candidate group** wherever the player left it. Only a third press reveals the exact **destination cell** for one representative piece. The next press clears the hint. The hint never snaps, rotates or moves a piece and works in both Free and Mosaic.
 
@@ -192,7 +192,7 @@ config.hints.maximum_level = JigsawHintSettings.MaximumLevel.PRECISE
 
 The temporary `hint_changed(level, piece_id)` signal can drive a game's hint HUD; `get_hint_info()` exposes only the information appropriate to the **current level**, and `focus_hint()` frames it using the camera. `clear_hint()` removes markers. Requested regions/candidates are drawn in a static, reduced-motion-friendly overlay; zoom/camera framing can be disabled through `hints.focus_on_request`. Existing save files and scene configurations remain compatible. No arbitrary puzzle solving or automatic color/shape classification is introduced.
 
-### P3.4 — undo and redo, one completed action at a time
+### Undo/redo — undo and redo, one completed action at a time
 
 The demo enables an in-memory, bounded history. **Ctrl+Z** undoes, **Ctrl+Y** or **Ctrl+Shift+Z** redoes. Holding/dragging a group is **one** history entry regardless of cursor frames, including compatible snap/joins and Mosaic placement. Rotations and moving groups into/out of trays are also supported.
 

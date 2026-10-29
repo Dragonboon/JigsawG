@@ -612,3 +612,6 @@ mono_crash.*.json
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,csharp,godot,visualstudiocode
+
+# Release artifacts
+dist/
